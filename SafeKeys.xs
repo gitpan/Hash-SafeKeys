@@ -43,15 +43,20 @@ void resize_STATES()
     STATES_size = new_size;
 }
 
-int save_iterator_state(HV* hv)
+int save_iterator_state(SV* hvref)
 {
     int i;
-    iterator_state *state = malloc(sizeof(iterator_state));
-    initialize();
-    if (hv == (HV*) 0) {
-	/* warn */
+    if (hvref == (SV*) 0) {
+	warn("Hash::SafeKeys::save_iterator_state: null input!");
 	return -1;
     }
+    HV* hv = (HV*) SvRV(hvref);
+    if (hv == (HV*) 0) {
+	warn("Hash::SafeKeys::save_iterator_state: null input!");
+	return -1;
+    }
+    iterator_state *state = malloc(sizeof(iterator_state));
+    initialize();
 
     for (i=0; i<STATES_size; i++) {
 	if (STATES[i] == (iterator_state*) 0) {
@@ -70,12 +75,21 @@ int save_iterator_state(HV* hv)
     return i;
 }
 
-void restore_iterator_state(HV* hv, int i)
+void restore_iterator_state(SV* hvref, int i)
 {
+    if (hvref == (SV*) 0) {
+	warn("Hash::SafeKeys::restore_iterator_state: null input");
+	return;
+    }
+    HV* hv = (HV*) SvRV(hvref);
+    if (hv == (HV*) 0) {
+	warn("Hash::SafeKeys::restore_iterator_state: null input");
+	return;
+    }
     iterator_state *state = STATES[i];
     initialize();
     if (i < 0 || i >= STATES_size) {
-	/* warn */
+	warn("Hash::SafeKeys::restore_iterator_state: invalid restore key %d", i);
 	return;
     }
     if (state != (iterator_state*) 0) {
@@ -83,7 +97,7 @@ void restore_iterator_state(HV* hv, int i)
 	HvEITER(hv) = state->eiter;
 	free(state);
     } else {
-	/* warn */
+	warn("Hash::SafeKeys::restore_iterator_state: operation failed for key %d", i);
     }
     STATES[i] = (iterator_state*) 0;
 }
@@ -92,18 +106,18 @@ void restore_iterator_state(HV* hv, int i)
 MODULE = Hash::SafeKeys		PACKAGE = Hash::SafeKeys	
 
 int
-save_iterator_state (hv)
-	HV *	hv
+save_iterator_state (hvref)
+	SV *	hvref
 
 void
-restore_iterator_state (hv, i)
-	HV *	hv
+restore_iterator_state (hvref, i)
+	SV *	hvref
 	int	i
 	PREINIT:
 	I32* temp;
 	PPCODE:
 	temp = PL_markstack_ptr++;
-	restore_iterator_state(hv, i);
+	restore_iterator_state(hvref, i);
 	if (PL_markstack_ptr != temp) {
           /* truly void, because dXSARGS not invoked */
 	  PL_markstack_ptr = temp;

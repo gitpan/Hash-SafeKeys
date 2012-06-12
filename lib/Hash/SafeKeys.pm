@@ -1,10 +1,10 @@
 =head1 NAME
 
-Hash::SafeKeys - get hash contents without resetting each
+Hash::SafeKeys - get hash contents without resetting each iterator
 
 =head1 VERSION
 
-Version 0.01
+Version 0.02
 
 =cut
 
@@ -34,7 +34,7 @@ operations inside a C<while ... each> loop:
 
     while (my($k,$v) = each %hash) {
        ...
-       @k = sort keys %hash;               # Eek!
+       @k = sort keys %hash;               # Infinite loop!
        @v = grep { /foo/ }, values %hash;  # Ack!
        print join ' ', %hash;              # Run away!
     }
@@ -152,7 +152,7 @@ use strict;
 use warnings;
 use base qw(Exporter);
 our @EXPORT = qw(safekeys safevalues safecopy);
-our $VERSION = '0.01';
+our $VERSION = '0.02';
 
 # crutch for creating the XS code ...
 #use Inline (Config => CLEAN_AFTER_BUILD => 0, FORCE_BUILD => 1, BUILD_NOISY => 1);
@@ -224,15 +224,20 @@ void resize_STATES()
     STATES_size = new_size;
 }
 
-int save_iterator_state(HV* hv)
+int save_iterator_state(SV* hvref)
 {
     int i;
-    iterator_state *state = malloc(sizeof(iterator_state));
-    initialize();
-    if (hv == (HV*) 0) {
-	/* warn */
+    if (hvref == (SV*) 0) {
+	warn("Hash::SafeKeys::save_iterator_state: null input!");
 	return -1;
     }
+    HV* hv = (HV*) SvRV(hvref);
+    if (hv == (HV*) 0) {
+	warn("Hash::SafeKeys::save_iterator_state: null input!");
+	return -1;
+    }
+    iterator_state *state = malloc(sizeof(iterator_state));
+    initialize();
 
     for (i=0; i<STATES_size; i++) {
 	if (STATES[i] == (iterator_state*) 0) {
@@ -251,12 +256,21 @@ int save_iterator_state(HV* hv)
     return i;
 }
 
-void restore_iterator_state(HV* hv, int i)
+void restore_iterator_state(SV* hvref, int i)
 {
+    if (hvref == (SV*) 0) {
+	warn("Hash::SafeKeys::restore_iterator_state: null input");
+	return;
+    }
+    HV* hv = (HV*) SvRV(hvref);
+    if (hv == (HV*) 0) {
+	warn("Hash::SafeKeys::restore_iterator_state: null input");
+	return;
+    }
     iterator_state *state = STATES[i];
     initialize();
     if (i < 0 || i >= STATES_size) {
-	/* warn */
+	warn("Hash::SafeKeys::restore_iterator_state: invalid restore key %d", i);
 	return;
     }
     if (state != (iterator_state*) 0) {
@@ -264,7 +278,7 @@ void restore_iterator_state(HV* hv, int i)
 	HvEITER(hv) = state->eiter;
 	free(state);
     } else {
-	/* warn */
+	warn("Hash::SafeKeys::restore_iterator_state: operation failed for key %d", i);
     }
     STATES[i] = (iterator_state*) 0;
 }

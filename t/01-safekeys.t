@@ -84,11 +84,12 @@ while (each %foo) {
     last if $count++ > 100;
     safekeys %foo;
     safevalues %foo;
-    () = sort(safecopy(%foo));
+    my %foo2 = safecopy %foo;
 }
 ok($count < 10, 'safe versions do not create infinite loop' );
 
 no warnings 'uninitialized';
+keys %hash;
 my @kk0 = keys %{$hash{quux}};
 my $vv0 = join q/--/, values %{$hash{quux}};
 my $hh0 = join q/==/,%{$hash{quux}};
@@ -109,4 +110,3 @@ while (my($k,$v) = each %hash) {
 	ok( $hh0 eq join(q/==/,%hh), 'second level safecopy has correct data,order' );
     }
 }
-

@@ -1,4 +1,8 @@
 Revision history for Hash-SafeKeys
 
+0.02	2012-06-12
+	Backport to Perl v5.6.
+	Added warning messages that no one should ever see.
+
 0.01    2012-06-07
         safekeys, safevalues, safecopy functions
