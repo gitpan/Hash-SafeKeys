@@ -4,7 +4,7 @@ Hash::SafeKeys - get hash contents without resetting each iterator
 
 =head1 VERSION
 
-Version 0.02
+Version 0.03
 
 =cut
 
@@ -152,7 +152,7 @@ use strict;
 use warnings;
 use base qw(Exporter);
 our @EXPORT = qw(safekeys safevalues safecopy);
-our $VERSION = '0.02';
+our $VERSION = '0.03';
 
 # crutch for creating the XS code ...
 #use Inline (Config => CLEAN_AFTER_BUILD => 0, FORCE_BUILD => 1, BUILD_NOISY => 1);

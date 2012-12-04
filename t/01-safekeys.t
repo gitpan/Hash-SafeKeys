@@ -92,7 +92,9 @@ no warnings 'uninitialized';
 keys %hash;
 my @kk0 = keys %{$hash{quux}};
 my $vv0 = join q/--/, values %{$hash{quux}};
-my $hh0 = join q/==/,%{$hash{quux}};
+
+# with 5.17.6, 5.18, two identical hashes can return kv's in different order
+my $hh0 = join q/==/,sort %{$hash{quux}};
 
 while (my($k,$v) = each %hash) {
     if (ref($v) eq 'HASH') {
@@ -107,6 +109,6 @@ while (my($k,$v) = each %hash) {
 	ok( $count < 10, 'second level each not an infinite loop' );
 	ok( "@kk0" eq "@kk", 'second level safekeys have correct data,order' );
 	ok( $vv0 eq join(q/--/,@vv), 'second level safevals have correct data,order' );
-	ok( $hh0 eq join(q/==/,%hh), 'second level safecopy has correct data,order' );
+	ok( $hh0 eq join(q/==/,sort %hh), 'second level safecopy has correct data' );
     }
 }
